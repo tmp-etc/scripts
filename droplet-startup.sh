@@ -40,58 +40,8 @@ sudo rm -rf /opt/nvim-linux-x86_64
 sudo tar -C /opt -xzf nvim-linux-x86_64.tar.gz
 echo 'export PATH="$PATH:/opt/nvim-linux-x86_64/bin"' >> /home/aaa/.bashrc
 mkdir /home/aaa/.config/nvim
+curl -L -o /home/aaa/.config/nvim/init.lua https://raw.githubusercontent.com/tmp-etc/dots/refs/heads/main/init.lua
 chown -R aaa:aaa /home/aaa/.config/nvim
-cat > /home/aaa/.config/nvim/init.lua << 'EOF'
-vim.pack.add({
-  { src = 'https://github.com/nvim-tree/nvim-tree.lua' },
-  { src = "https://github.com/junegunn/fzf" },
-  { src = "https://github.com/junegunn/fzf.vim" }
-})
-
--- disable netrw at the very start of your init.lua
-vim.g.loaded_netrw = 1
-vim.g.loaded_netrwPlugin = 1
-
--- optionally enable 24-bit colour
-vim.opt.termguicolors = true
-
----@type nvim_tree.config
-local config = {
-  sort = {
-    sorter = "case_sensitive",
-  },
-  view = {
-    width = 30,
-  },
-  renderer = {
-    group_empty = true,
-    icons = {
-      show = {
-        git = false,
-        folder = false,
-        file = false,
-        folder_arrow = false,
-      }
-    },
-    indent_markers = {
-      enable = true,
-      icons = { corner = "└", edge = "│", item = "├", bottom = "─", none = " " },
-    }
-  },
-  filters = {
-    dotfiles = true,
-  }
-}
-require("nvim-tree").setup(config)
-
---vim.api.nvim_create_autocmd("VimEnter", {
---  callback = function() require("nvim-tree.api").tree.open() end,
---})
-
-vim.keymap.set("n", "<C-n>", ":NvimTreeToggle<CR>")
-vim.opt.wrap = false
-EOF
-
 echo "alias vim='nvim'" >> /home/aaa/.bashrc
 # --- keymaps for nvim ---
 ## Ctrl+n - toggle file explorer
