@@ -40,7 +40,7 @@ sudo rm -rf /opt/nvim-linux-x86_64
 sudo tar -C /opt -xzf nvim-linux-x86_64.tar.gz
 echo 'export PATH="$PATH:/opt/nvim-linux-x86_64/bin"' >> /home/aaa/.bashrc
 mkdir /home/aaa/.config/nvim
-curl -L -o /home/aaa/.config/nvim/init.lua https://raw.githubusercontent.com/tmp-etc/dots/refs/heads/main/init.lua
+#curl -L -o /home/aaa/.config/nvim/init.lua https://raw.githubusercontent.com/tmp-etc/dots/refs/heads/main/init.lua
 chown -R aaa:aaa /home/aaa/.config/nvim
 echo "alias vim='nvim'" >> /home/aaa/.bashrc
 # --- keymaps for nvim ---
