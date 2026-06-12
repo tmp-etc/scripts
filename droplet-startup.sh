@@ -44,6 +44,26 @@ mkdir /home/aaa/.config/nvim
 chown -R aaa:aaa /home/aaa/.config/nvim
 echo "alias vim='nvim'" >> /home/aaa/.bashrc
 echo "alias fzfcat=\"fzf --bind 'enter:become(cat {})'\"" >> /home/aaa/.bashrc
+
+cat << 'EOF' >> ~/.bashrc
+rgcat() {
+  local rg_prefix="rg --column --line-number --no-heading --color=always --smart-case"
+  local match
+  match=$(
+    FZF_DEFAULT_COMMAND="$rg_prefix ${1:-''}" \
+    fzf --ansi \
+        --disabled \
+        --query "${1:-}" \
+        --bind "change:reload:sleep 0.1; $rg_prefix {q} || true" \
+        --delimiter : \
+        --preview 'batcat --color=always --highlight-line {2} {1} 2>/dev/null' \
+        --preview-window 'right,60%,border-left,+{2}+3/3,~3'
+  ) || return
+  local file="${match%%:*}"
+  [[ -n "$file" ]] && cat "$file"
+}
+EOF
+
 # --- keymaps for nvim ---
 ## Ctrl+n - toggle file explorer
 ## Ctrl+v - vsplit
