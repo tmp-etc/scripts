@@ -43,6 +43,7 @@ mkdir /home/aaa/.config/nvim
 #curl -L -o /home/aaa/.config/nvim/init.lua https://raw.githubusercontent.com/tmp-etc/dots/refs/heads/main/init.lua
 chown -R aaa:aaa /home/aaa/.config/nvim
 echo "alias vim='nvim'" >> /home/aaa/.bashrc
+echo "alias fzfcat=\"fzf --bind 'enter:become(cat {})'\"" >> /home/aaa/.bashrc
 # --- keymaps for nvim ---
 ## Ctrl+n - toggle file explorer
 ## Ctrl+v - vsplit
