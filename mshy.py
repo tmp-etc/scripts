@@ -57,24 +57,21 @@ class MeshChat:
         name = me["user"]["longName"] if me else "unknown"
         self.say(f"[connected as {name}]")
 
-    def on_receive(self, packet):
-        try:
-            decoded = packet.get("decoded", {})
-            if decoded.get("portnum") not in ["PRIVATE_APP", "TEXT_MESSAGE_APP"]:
-                return
-            if decoded.get("portnum") == "PRIVATE_APP":
-                try:
-                    text = self.cipher.decrypt(decoded["payload"])
-                except (CryptoError, KeyError, UnicodeDecodeError):
-                    self.say("error decrypting our onion crypto")
-                    return  # not ours, wrong key, or tampered — drop silently
-                sender = self.node_name(packet.get("from"))
-                self.say(f"<PRIVATE> [{sender}] {text}")
-            elif decoded.get("portnum") == "TEXT_MESSAGE_APP":
-                blob = bytes(decoded["payload"]).decode("utf-8")
-                self.say(f"<BRDCST> {blob}")
-        except pub.SenderUnknownMshsDataError:
+    def on_receive(self, packet, interface):
+        decoded = packet.get("decoded", {})
+        if decoded.get("portnum") not in ["PRIVATE_APP", "TEXT_MESSAGE_APP"]:
             return
+        if decoded.get("portnum") == "PRIVATE_APP":
+            try:
+                text = self.cipher.decrypt(decoded["payload"])
+            except (CryptoError, KeyError, UnicodeDecodeError):
+                self.say("error decrypting our onion crypto")
+                return  # not ours, wrong key, or tampered — drop silently
+            sender = self.node_name(packet.get("from"))
+            self.say(f"<PRIVATE> [{sender}] {text}")
+        elif decoded.get("portnum") == "TEXT_MESSAGE_APP":
+            blob = bytes(decoded["payload"]).decode("utf-8")
+            self.say(f"<BRDCST> {blob}")
 
     def node_name(self, node_num):
         if node_num is None:
