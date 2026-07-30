@@ -68,10 +68,11 @@ class MeshChat:
                 self.say("error decrypting our onion crypto")
                 return  # not ours, wrong key, or tampered — drop silently
             sender = self.node_name(packet.get("from"))
-            self.say(f"<PRIVATE> [{sender}] {text}")
+            self.say(f"<PRIVATE> [@{sender}] {text}")
         elif decoded.get("portnum") == "TEXT_MESSAGE_APP":
             blob = bytes(decoded["payload"]).decode("utf-8")
-            self.say(f"<BRDCST> {blob}")
+            channel_num = packet.get("channel", 0)
+            self.say(f"<BRDCST> [CH-{channel_num}] {blob}")
 
     def node_name(self, node_num):
         if node_num is None:
