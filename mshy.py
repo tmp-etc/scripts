@@ -58,21 +58,23 @@ class MeshChat:
         self.say(f"[connected as {name}]")
 
     def on_receive(self, packet):
-        decoded = packet.get("decoded", {})
-        if decoded.get("portnum") not in ["PRIVATE_APP", "TEXT_MESSAGE_APP"]:
+        try:
+            decoded = packet.get("decoded", {})
+            if decoded.get("portnum") not in ["PRIVATE_APP", "TEXT_MESSAGE_APP"]:
+                return
+            if decoded.get("portnum") == "PRIVATE_APP":
+                try:
+                    text = self.cipher.decrypt(decoded["payload"])
+                except (CryptoError, KeyError, UnicodeDecodeError):
+                    self.say("error decrypting our onion crypto")
+                    return  # not ours, wrong key, or tampered — drop silently
+                sender = self.node_name(packet.get("from"))
+                self.say(f"<PRIVATE> [{sender}] {text}")
+            elif decoded.get("portnum") == "TEXT_MESSAGE_APP":
+                blob = bytes(decoded["payload"]).decode("utf-8")
+                self.say(f"<BRDCST> {blob}")
+        except pub.SenderUnknownMshsDataError:
             return
-        self.say(decoded)
-        if decoded.get("portnum") == "PRIVATE_APP":
-            try:
-                text = self.cipher.decrypt(decoded["payload"])
-            except (CryptoError, KeyError, UnicodeDecodeError):
-                self.say("error decrypting our internal crypto")
-                return  # not ours, wrong key, or tampered — drop silently
-            sender = self.node_name(packet.get("from"))
-            self.say(f"<PRIVATE> [{sender}] {text}")
-        elif decoded.get("portnum") == "TEXT_MESSAGE_APP":
-            blob = bytes(decoded["payload"]).decode("utf-8")
-            self.say(f"<BRDCST> {blob}")
 
     def node_name(self, node_num):
         if node_num is None:
@@ -130,6 +132,16 @@ class MeshChat:
         if cmd in ("/quit", "/exit"):
             return True
 
+        elif cmd == "/help":
+            print("""
+Commands:
+    - /info
+    - /channels
+    - /nodes
+    - /dm <!hexid|nodenum> <message>
+    - /shout <channel-idx> <message>
+            """)
+
         elif cmd == "/info":
             print(self.interface.getMyNodeInfo())
 
@@ -152,7 +164,7 @@ class MeshChat:
                 print("usage: /shout <channel-idx> <message>")
             else:
                 dest, msg = parts[1], parts[2]
-                self.shout(text=msg, channel=dest)
+                self.shout(text=msg, channel=int(dest))
         else:
             print(f"unknown command: {cmd}")
 
