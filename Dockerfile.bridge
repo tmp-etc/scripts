@@ -1,0 +1,13 @@
+# Optional: run the Pi-side bridge as a container next to Kismet.
+#   docker build -f Dockerfile.bridge -t gps-bridge .
+#   docker run --rm --network host \
+#     -e URL=https://gps.example.com -e TOKEN=your-secret -e PORT=4353 \
+#     gps-bridge
+# --network host lets Kismet reach the NMEA port on localhost the simple way.
+FROM python:3.12-slim
+WORKDIR /app
+RUN pip install --no-cache-dir requests==2.32.3
+COPY gps_bridge.py .
+ENV PORT=4353
+EXPOSE 4353
+CMD ["python", "gps_bridge.py"]
