@@ -1,0 +1,131 @@
+---
+- name: Install Docker, CLI tools and set up the hmm user
+  hosts: all
+  become: true
+
+  vars:
+    ctf_user: hmm
+    conflicting_packages:
+      - docker.io
+      - docker-compose
+      - docker-compose-v2
+      - docker-doc
+      - podman-docker
+      - containerd
+      - runc
+    packages:
+      # tools
+      - ranger
+      - caca-utils
+      - highlight
+      - atool
+      - w3m
+      - poppler-utils
+      - mediainfo
+      - bat
+      - fzf
+      - ripgrep
+      - git
+      # docker
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+      - docker-buildx-plugin
+      - docker-compose-plugin
+
+  tasks:
+    # --- Docker repo ---------------------------------------------------------
+    - name: Remove conflicting container packages
+      ansible.builtin.apt:
+        name: "{{ conflicting_packages }}"
+        state: absent
+
+    - name: Install prerequisites
+      ansible.builtin.apt:
+        name:
+          - ca-certificates
+          - curl
+        state: present
+        update_cache: true
+
+    - name: Create apt keyrings directory
+      ansible.builtin.file:
+        path: /etc/apt/keyrings
+        state: directory
+        mode: "0755"
+
+    - name: Download Docker GPG key
+      ansible.builtin.get_url:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        dest: /etc/apt/keyrings/docker.asc
+        mode: "0644"
+
+    - name: Get dpkg architecture
+      ansible.builtin.command: dpkg --print-architecture
+      register: dpkg_arch
+      changed_when: false
+
+    - name: Add Docker apt repository
+      ansible.builtin.deb822_repository:
+        name: docker            # -> /etc/apt/sources.list.d/docker.sources
+        types: deb
+        uris: https://download.docker.com/linux/ubuntu
+        suites: "{{ ansible_facts['distribution_release'] }}"
+        components: stable
+        architectures: "{{ dpkg_arch.stdout }}"
+        signed_by: /etc/apt/keyrings/docker.asc
+
+    # --- Packages ------------------------------------------------------------
+    - name: Install tools and Docker
+      ansible.builtin.apt:
+        name: "{{ packages }}"
+        state: present
+        update_cache: true
+
+    # --- User ----------------------------------------------------------------
+    - name: Create user {{ ctf_user }}
+      ansible.builtin.user:
+        name: "{{ ctf_user }}"
+        comment: GECOS
+        shell: /bin/bash
+        groups: docker
+        append: true
+        create_home: true
+        password_lock: true
+
+    - name: Install sparse-checkout helper script
+      ansible.builtin.copy:
+        dest: "/home/{{ ctf_user }}/get_git_dir.sh"
+        owner: "{{ ctf_user }}"
+        group: "{{ ctf_user }}"
+        mode: "0744"
+        content: |
+          #!/bin/bash
+          git clone --filter=blob:none --sparse https://github.com/sajjadium/ctf-archives.git .
+          git sparse-checkout add "$1"
+
+    - name: Create tseeteeeff directory
+      ansible.builtin.file:
+        path: "/home/{{ ctf_user }}/tseeteeeff"
+        state: directory
+        owner: "{{ ctf_user }}"
+        group: "{{ ctf_user }}"
+        mode: "0755"
+
+    # --- SSH -----------------------------------------------------------------
+    - name: Create .ssh directory
+      ansible.builtin.file:
+        path: "/home/{{ ctf_user }}/.ssh"
+        state: directory
+        owner: "{{ ctf_user }}"
+        group: "{{ ctf_user }}"
+        mode: "0700"
+
+    - name: Copy root's authorized_keys to {{ ctf_user }}
+      ansible.builtin.copy:
+        src: /root/.ssh/authorized_keys
+        dest: "/home/{{ ctf_user }}/.ssh/authorized_keys"
+        remote_src: true
+        owner: "{{ ctf_user }}"
+        group: "{{ ctf_user }}"
+        mode: "0600"

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-MYIP='1.1.1.1'
+MYIP='90.191.168.125'
 
 # firewall shite
 ufw --force reset
@@ -25,8 +25,10 @@ EOF
 # install all the shite
 sudo apt update
 apt-get install -y ranger caca-utils highlight atool w3m poppler-utils mediainfo bat fzf ripgrep docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
-# UX shite
+
 adduser --gecos GECOS --disabled-password aaa
+usermod -aG docker aaa
+
 while [ ! -d /home/aaa ]
 do
     sleep 1
@@ -41,12 +43,12 @@ sudo tar -C /opt -xzf nvim-linux-x86_64.tar.gz
 echo 'export PATH="$PATH:/opt/nvim-linux-x86_64/bin"' >> /home/aaa/.bashrc
 echo 'export NVIM_NOTTYFAST=1' >> /home/aaa/.bashrc
 mkdir /home/aaa/.config/nvim
-#curl -L -o /home/aaa/.config/nvim/init.lua https://raw.githubusercontent.com/tmp-etc/dots/refs/heads/main/init.lua
+curl -L -o /home/aaa/.config/nvim/init.lua https://raw.githubusercontent.com/tmp-etc/dots/refs/heads/main/init.lua
 chown -R aaa:aaa /home/aaa/.config/nvim
 echo "alias vim='nvim'" >> /home/aaa/.bashrc
 echo "alias fzfcat=\"fzf --bind 'enter:become(cat {})'\"" >> /home/aaa/.bashrc
 
-cat << 'EOF' >> ~/.bashrc
+cat << 'EOF' >> /home/aaa/.bashrc
 rgcat() {
   local rg_prefix="rg --column --line-number --no-heading --color=always --smart-case"
   local match
@@ -64,6 +66,17 @@ rgcat() {
   [[ -n "$file" ]] && cat "$file"
 }
 EOF
+
+cat << 'EOF' >> /home/aaa/get_git_dir.sh
+git clone --filter=blob:none --sparse https://github.com/sajjadium/ctf-archives.git .
+git sparse-checkout add ctfs/$1
+EOF
+
+chown -R aaa:aaa /home/aaa/get_git_dir.sh
+chmod u+x get_git_dir.sh
+
+mkdir /home/aaa/tseeteeeff
+chown -R aaa:aaa /home/aaa/tseeteeeff
 
 # --- keymaps for nvim ---
 ## Ctrl+n - toggle file explorer
